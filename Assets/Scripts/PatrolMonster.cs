@@ -8,8 +8,8 @@ public class PatrolMonster : MonoBehaviour
 {
     public float speed = 2f;
     public float detectionRange = 0.1f;
-    public Vector2 areaMin = new Vector2(-10, -10);
-    public Vector2 areaMax = new Vector2(10, 10);
+    public Vector2 areaMin = new Vector2(-5, -5);
+    public Vector2 areaMax = new Vector2(5, 5);
     public Transform player;
     private float pie = 3.1415f;
 
