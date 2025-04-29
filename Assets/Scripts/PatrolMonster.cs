@@ -1,18 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
+using UnityEditor;
 using UnityEngine;
 
 public class PatrolMonster : MonoBehaviour
 {
-    // 몬스터의 스피드는 2f 플레이어와의 거리가 3f 이하이면 seeinplayer 함수를 통해 전투 로그를 띄우도록함. 나중에 추가 구현.
-    // 몬스터는 좌우상하를 포함해 8가지 방향을 추가해서 랜덤을 통해서 특정 인덱스에 접근해서 그 방향으로 이동하도록함
-    // 그리고 몬스터가 이동할 때 미리 지정해 놓은 min , max가 아닐 경우를 if문을 통해 판단해 아니라면 다시 RandomDirection함수를 실행
-
     public float speed = 2f;
-    public float detectionRange = 3f;
+    public float detectionRange = 0.1f;
     public Vector2 areaMin = new Vector2(-10, -10);
     public Vector2 areaMax = new Vector2(10, 10);
     public Transform player;
+    private float pie = 3.1415f;
 
     private Vector2 direction;
 
@@ -23,14 +22,14 @@ public class PatrolMonster : MonoBehaviour
 
     private void Update()
     {
-        if (Vector2.Distance(transform.position, player.position) <= detectionRange)
+        if (Vector2.Distance(transform.position, player.position) <= detectionRange) // 범위 안이면 사망 로그
         {
-            SeeingPlayer();
+            seeingPlayer();
         }
 
-        MonsterMove();
+        MonsterMove(); // 움직임
 
-        if (!IsInside((Vector2)transform.position))
+        if (!isInside((Vector2)transform.position)) //몬스터의 위치가 벽이면 RandomDirection 실행 
         {
             RandomDirection();
         }
@@ -43,30 +42,44 @@ public class PatrolMonster : MonoBehaviour
 
     void RandomDirection()
     {
-        Vector2[] directions = new Vector2[]
+        float[] angles = new float[] { 0.0f, 45.0f, 90.0f, 135.0f, 180.0f, 225.0f, 270.0f, 315.0f }; 
+        // 몬스터가 갈 수 있는 방향 각도를 정의
+        Vector2[] validDirections = new Vector2[angles.Length];
+
+        int directionCount = 0;
+
+        foreach (float angle in angles) // 모든 angles를 루프
         {
-        new Vector2(1, 0),
-        new Vector2(1, 1),
-        new Vector2(0, 1),
-        new Vector2(-1, 1),
-        new Vector2(-1, 0),
-        new Vector2(-1, -1),
-        new Vector2(0, -1),
-        new Vector2(1, -1),
-        };
+            float radian = angle * (pie / 180); // 모든 각을 라디안 값으로 변경 mathf계산을 위해.
 
-        int index = Random.Range(0, directions.Length);
-        direction = directions[index].normalized;
+            Vector2 dir = new Vector2(Mathf.Cos(radian), Mathf.Sin(radian)); 
+            // 단위 원 기준 Vector2의 x좌표는 cos세타 값, y좌표는 sin세타 값새로운 방향 x,y값 대입.
+
+            Vector2 nextPos = (Vector2)transform.position + dir; // 현재 위치에서 dir값을 더해서 nextPos에 저장
+
+            if (isInside(nextPos)) // 유효한 방향 nextPos이면 validDirections에 저장
+            { 
+                validDirections[directionCount] = dir; 
+                directionCount++;
+            }
+        }
+
+        int index = Random.Range(0, validDirections.Length); // 유효한 방향 중 랜덤으로 선택
+        direction = validDirections[index].normalized; // 선택된 방향을 설정
     }
 
-
-    bool IsInside(Vector2 pos)
+    bool isInside(Vector2 pos) // x 와 y축을 기준으로 범위를 넘어가는 것을 판단
     {
-        return pos.x >= areaMin.x && pos.x <= areaMax.x &&
-               pos.y >= areaMin.y && pos.y <= areaMax.y;
+        if (pos.x >= areaMin.x && pos.x <= areaMax.x && pos.y >= areaMin.y && pos.y <= areaMax.y)
+        {
+            return true;
+        }
+        else return false;
     }
-    void SeeingPlayer()
+
+    void seeingPlayer() // 1f 거리 안이면 사망
     {
-        Debug.Log("전투 시작");
+        Debug.Log("플레이어 사망 게임 종료");
+        EditorApplication.isPlaying = false;
     }
 }
